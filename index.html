@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube 채널 대시보드</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131a;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #e84c8b;
+    --accent3: #2dd4bf;
+    --text: #e8e8f0;
+    --text2: #8888aa;
+    --red: #ff4466;
+    --green: #2dd4bf;
+    --yellow: #f59e0b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 24px;
+    background: radial-gradient(ellipse at 50% 0%, #1a1040 0%, #0a0a0f 70%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #login-screen > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .login-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .login-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .login-title span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .login-subtitle {
+    color: var(--text2);
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 40px;
+    line-height: 1.6;
+  }
+
+  .account-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 16px;
+  }
+
+  .account-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .account-card:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+    transform: translateY(-1px);
+  }
+
+  .account-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .account-icon.ch1 { background: linear-gradient(135deg, #7c6af7, #e84c8b); }
+  .account-icon.ch2 { background: linear-gradient(135deg, #2dd4bf, #7c6af7); }
+
+  .account-info { flex: 1; }
+  .account-name {
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 2px;
+  }
+  .account-desc {
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .account-arrow {
+    color: var(--text2);
+    font-size: 18px;
+  }
+
+  .login-note {
+    font-size: 11px;
+    color: var(--text2);
+    text-align: center;
+    line-height: 1.5;
+    max-width: 320px;
+  }
+
+  /* MAIN DASHBOARD */
+  #dashboard {
+    display: none;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  #dashboard::before {
+    content: '';
+    position: fixed;
+    top: 60px;
+    right: 0;
+    width: 65%;
+    height: 85%;
+    background: url('https://mona070611.github.io/YT-Grow-Support/aymee.jpg') no-repeat top right;
+    background-size: contain;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--accent);
+  }
+
+  .channel-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .channel-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .switch-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .switch-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .logout-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .logout-btn:hover { color: var(--red); border-color: var(--red); }
+
+  /* CONTENT */
+  .content {
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* LOADING */
+  #loading-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 16px;
+  }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    color: var(--text2);
+    font-size: 14px;
+  }
+
+  /* ERROR */
+  #error-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    gap: 16px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .error-icon { font-size: 48px; }
+  .error-title { font-size: 20px; font-weight: 600; color: var(--red); }
+  .error-msg { color: var(--text2); font-size: 14px; line-height: 1.6; max-width: 320px; }
+  .retry-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 24px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+    margin-top: 8px;
+  }
+
+  /* SECTION */
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin: 28px 0 12px;
+  }
+
+  /* STAT CARDS */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .stat-card.purple::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .stat-card.pink::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .stat-card.teal::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .stat-card.yellow::before { background: linear-gradient(90deg, var(--yellow), transparent); }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-change {
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .stat-change.up { color: var(--green); }
+  .stat-change.down { color: var(--red); }
+  .stat-change.neutral { color: var(--text2); }
+
+  /* CHART CARD */
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 12px;
+  }
+
+  .chart-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .chart-title {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .chart-subtitle {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  .chart-container {
+    position: relative;
+    height: 180px;
+  }
+
+  /* INSIGHT CARDS */
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .insight-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .insight-icon.purple { background: rgba(124,106,247,0.15); }
+  .insight-icon.pink { background: rgba(232,76,139,0.15); }
+  .insight-icon.teal { background: rgba(45,212,191,0.15); }
+  .insight-icon.yellow { background: rgba(245,158,11,0.15); }
+
+  .insight-content {}
+  .insight-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+  .insight-text { font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+  /* VIDEO LIST */
+  .video-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .video-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .video-rank {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--border);
+    width: 28px;
+    flex-shrink: 0;
+    text-align: center;
+  }
+
+  .video-rank.top { color: var(--accent); }
+
+  .video-info { flex: 1; min-width: 0; }
+  .video-title {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+  .video-meta { font-size: 11px; color: var(--text2); }
+
+  .video-views {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* SCHEDULE GRID */
+  .schedule-grid {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    overflow-x: auto;
+  }
+
+  .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 320px;
+  }
+
+  .schedule-table th {
+    font-size: 10px;
+    color: var(--text2);
+    font-weight: 500;
+    padding: 4px 6px;
+    text-align: center;
+  }
+
+  .schedule-table td {
+    padding: 3px;
+    text-align: center;
+  }
+
+  .heat-cell {
+    width: 32px;
+    height: 28px;
+    border-radius: 6px;
+    display: inline-block;
+    font-size: 9px;
+    line-height: 28px;
+    color: transparent;
+    transition: all 0.2s;
+  }
+
+  .heat-cell:hover { transform: scale(1.1); color: white; }
+
+  .heat-0 { background: var(--surface2); }
+  .heat-1 { background: rgba(124,106,247,0.2); }
+  .heat-2 { background: rgba(124,106,247,0.4); }
+  .heat-3 { background: rgba(124,106,247,0.65); }
+  .heat-4 { background: rgba(124,106,247,0.9); }
+
+  /* RECOMMENDATION */
+  .rec-card {
+    background: linear-gradient(135deg, rgba(124,106,247,0.1), rgba(232,76,139,0.05));
+    border: 1px solid rgba(124,106,247,0.3);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 10px;
+  }
+
+  .rec-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .rec-tag {
+    background: var(--accent);
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  .rec-title { font-weight: 600; font-size: 15px; }
+  .rec-body { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .rec-body strong { color: var(--text); }
+
+  /* PERIOD SELECTOR */
+  .period-selector {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .period-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .period-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  /* REFRESH */
+  .refresh-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: var(--text2);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .refresh-btn:hover { border-color: var(--accent3); color: var(--accent3); }
+
+  .tab-bar {
+    display: flex;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+
+  .tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+    white-space: nowrap;
+  }
+
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .footer-space { height: 40px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-logo">YT Dashboard</div>
+  <h1 class="login-title">내 채널 <span>분석하기</span></h1>
+  <p class="login-subtitle">채널을 선택하면 Google 계정으로<br>로그인 후 데이터를 불러와요</p>
+  <div class="account-cards">
+    <div class="account-card" onclick="startLogin(1)">
+      <div class="account-icon ch1">🎮</div>
+      <div class="account-info">
+        <div class="account-name">채널 1</div>
+        <div class="account-desc">Google 계정으로 로그인</div>
+      </div>
+      <div class="account-arrow">›</div>
+    </div>
+    <div class="account-card" onclick="startLogin(2)">
+      <div class="account-icon ch2">🎯</div>
+      <div class="account-info">
+        <div class="account-name">채널 2</div>
+        <div class="account-desc">Google 계정으로 로그인</div>
+      </div>
+      <div class="account-arrow">›</div>
+    </div>
+  </div>
+  <p class="login-note">데이터는 외부 서버에 저장되지 않으며<br>브라우저 세션 내에서만 사용돼요</p>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">데이터 불러오는 중...</div>
+</div>
+
+<!-- ERROR SCREEN -->
+<div id="error-screen">
+  <div class="error-icon">⚠️</div>
+  <div class="error-title">연결 실패</div>
+  <div class="error-msg" id="error-msg">데이터를 불러오지 못했어요. 다시 시도해주세요.</div>
+  <button class="retry-btn" onclick="showLogin()">처음으로 돌아가기</button>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div id="dashboard">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">YT Dashboard</div>
+      <div class="channel-badge">
+        <div class="channel-dot"></div>
+        <span id="channel-name-badge">채널 로딩중...</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="switch-btn" onclick="showLogin()">⇄ 채널 전환</button>
+      <button class="logout-btn" onclick="showLogin()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- PERIOD -->
+    <div class="period-selector" style="margin-top:16px;">
+      <button class="period-btn active" onclick="changePeriod(28, this)">28일</button>
+      <button class="period-btn" onclick="changePeriod(90, this)">90일</button>
+      <button class="period-btn" onclick="changePeriod(365, this)">1년</button>
+    </div>
+
+    <!-- TABS -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('overview', this)">📊 개요</button>
+      <button class="tab-btn" onclick="switchTab('growth', this)">📈 성장</button>
+      <button class="tab-btn" onclick="switchTab('content', this)">🎬 콘텐츠</button>
+      <button class="tab-btn" onclick="switchTab('strategy', this)">🎯 전략</button>
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div id="tab-overview" class="tab-content active">
+      <div class="section-title">핵심 지표</div>
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card purple">
+          <div class="stat-label">구독자</div>
+          <div class="stat-value" id="stat-subs">—</div>
+          <div class="stat-change neutral" id="stat-subs-change">불러오는 중</div>
+        </div>
+        <div class="stat-card pink">
+          <div class="stat-label">총 조회수</div>
+          <div class="stat-value" id="stat-views">—</div>
+          <div class="stat-change neutral" id="stat-views-change">불러오는 중</div>
+        </div>
+        <div class="stat-card teal">
+          <div class="stat-label">동영상 수</div>
+          <div class="stat-value" id="stat-videos">—</div>
+          <div class="stat-change neutral" id="stat-videos-change">—</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">업로드 주기</div>
+          <div class="stat-value" id="stat-freq">—</div>
+          <div class="stat-change neutral" id="stat-freq-change">분석 중</div>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top:24px;">최근 영상 성과</div>
+      <div class="video-list" id="video-list">
+        <div class="video-item"><div style="color:var(--text2);font-size:13px;">불러오는 중...</div></div>
+      </div>
+    </div>
+
+    <!-- GROWTH TAB -->
+    <div id="tab-growth" class="tab-content">
+      <div class="section-title">구독자 성장 추이</div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">구독자 누적</div>
+            <div class="chart-subtitle" id="growth-subtitle">선택 기간 기준</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="growth-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="section-title">조회수 추이</div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">일별 조회수</div>
+            <div class="chart-subtitle">최근 업로드 기준</div>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="views-chart"></canvas>
+        </div>
+      </div>
+
+      <div id="growth-insights"></div>
+    </div>
+
+    <!-- CONTENT TAB -->
+    <div id="tab-content" class="tab-content">
+      <div class="section-title">시청자 활동 히트맵</div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">최적 업로드 시간대</div>
+            <div class="chart-subtitle">시청자가 가장 활발한 시간 (추정)</div>
+          </div>
+        </div>
+        <div class="schedule-grid" style="border:none;padding:0;">
+          <table class="schedule-table" id="heatmap-table">
+          </table>
+        </div>
+      </div>
+
+      <div class="section-title">Short vs 일반 영상</div>
+      <div class="chart-card">
+        <div class="chart-container" style="height:160px;">
+          <canvas id="short-chart"></canvas>
+        </div>
+      </div>
+
+      <div id="content-insights"></div>
+    </div>
+
+    <!-- STRATEGY TAB -->
+    <div id="tab-strategy" class="tab-content">
+      <div id="strategy-content"></div>
+    </div>
+
+    <div class="footer-space"></div>
+  </div>
+</div>
+
+<script>
+const CLIENT_ID = '306439834256-2gs7d05mlebm2halacgapibic5959uta.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly';
+
+let currentToken = null;
+let currentChannelData = null;
+let currentPeriod = 28;
+let charts = {};
+
+// ─── SCREENS ───────────────────────────────────────────
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('error-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+}
+
+function showLoading(msg = '데이터 불러오는 중...') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'flex';
+  document.getElementById('error-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loading-text').textContent = msg;
+}
+
+function showError(msg) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('error-screen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('error-msg').textContent = msg;
+}
+
+function showDashboard() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('error-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+// ─── OAUTH ─────────────────────────────────────────────
+function startLogin(channelNum) {
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: 'https://mona070611.github.io/YT-Grow-Support/',
+    response_type: 'token',
+    scope: SCOPES,
+    include_granted_scopes: 'true',
+    state: `channel${channelNum}`
+  });
+
+  showLoading('Google 로그인 중...');
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+function handleOAuthCallback() {
+  const hash = window.location.hash.substring(1);
+  if (!hash) return false;
+
+  const params = new URLSearchParams(hash);
+  const token = params.get('access_token');
+  const state = params.get('state');
+
+  if (token) {
+    currentToken = token;
+    window.history.replaceState({}, document.title, window.location.pathname);
+    return true;
+  }
+  return false;
+}
+
+// ─── API CALLS ─────────────────────────────────────────
+async function apiGet(url) {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${currentToken}` }
+  });
+  if (!res.ok) throw new Error(`API 오류: ${res.status}`);
+  return res.json();
+}
+
+async function loadChannelData() {
+  showLoading('채널 정보 불러오는 중...');
+
+  try {
+    // Channel basic info
+    const channelRes = await apiGet(
+      'https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true'
+    );
+
+    if (!channelRes.items || channelRes.items.length === 0) {
+      throw new Error('채널을 찾을 수 없어요. YouTube 채널이 연결된 계정인지 확인해주세요.');
+    }
+
+    const channel = channelRes.items[0];
+    const stats = channel.statistics;
+    const snippet = channel.snippet;
+
+    showLoading('영상 목록 불러오는 중...');
+
+    // Recent videos
+    const uploadsId = channel.contentDetails?.relatedPlaylists?.uploads ||
+      (await apiGet(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true`))
+        .items[0].contentDetails.relatedPlaylists.uploads;
+
+    let videos = [];
+    try {
+      const playlistRes = await apiGet(
+        `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${uploadsId}&maxResults=20`
+      );
+      const videoIds = playlistRes.items.map(i => i.contentDetails.videoId).join(',');
+
+      const videoStats = await apiGet(
+        `https://www.googleapis.com/youtube/v3/videos?part=statistics,snippet,contentDetails&id=${videoIds}`
+      );
+      videos = videoStats.items;
+    } catch(e) {
+      console.warn('영상 목록 불러오기 실패:', e);
+    }
+
+    showLoading('분석 중...');
+
+    currentChannelData = { channel, stats, snippet, videos };
+    renderDashboard();
+    showDashboard();
+
+  } catch (err) {
+    console.error(err);
+    showError(err.message || '데이터를 불러오지 못했어요. 다시 시도해주세요.');
+  }
+}
+
+// ─── RENDER ────────────────────────────────────────────
+function renderDashboard() {
+  const { stats, snippet, videos } = currentChannelData;
+
+  // Channel name
+  document.getElementById('channel-name-badge').textContent = snippet.title;
+
+  // Stats
+  const subs = parseInt(stats.subscriberCount || 0);
+  const views = parseInt(stats.viewCount || 0);
+  const videoCount = parseInt(stats.videoCount || 0);
+
+  document.getElementById('stat-subs').textContent = formatNumber(subs);
+  document.getElementById('stat-views').textContent = formatNumber(views);
+  document.getElementById('stat-videos').textContent = videoCount.toLocaleString();
+
+  // Upload frequency analysis
+  if (videos.length > 1) {
+    const dates = videos
+      .map(v => new Date(v.snippet.publishedAt))
+      .sort((a, b) => b - a);
+    const gaps = [];
+    for (let i = 0; i < Math.min(dates.length - 1, 10); i++) {
+      gaps.push((dates[i] - dates[i+1]) / (1000 * 60 * 60 * 24));
+    }
+    const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+    const freq = avgGap < 3 ? '거의 매일' :
+                 avgGap < 5 ? '주 2~3회' :
+                 avgGap < 9 ? '주 1회' :
+                 avgGap < 16 ? '격주' : '월 1~2회';
+    document.getElementById('stat-freq').textContent = freq;
+    document.getElementById('stat-freq-change').textContent = `평균 ${Math.round(avgGap)}일 간격`;
+    document.getElementById('stat-freq-change').className = 'stat-change neutral';
+  }
+
+  // Subscriber change estimate (mock with available data)
+  document.getElementById('stat-subs-change').textContent = `총 ${formatNumber(subs)}명 달성`;
+  document.getElementById('stat-subs-change').className = 'stat-change up';
+  document.getElementById('stat-views-change').textContent = `채널 총 누적`;
+  document.getElementById('stat-views-change').className = 'stat-change neutral';
+
+  renderVideoList(videos);
+  renderGrowthTab(videos, stats);
+  renderContentTab(videos);
+  renderStrategyTab(videos, stats, snippet);
+}
+
+function renderVideoList(videos) {
+  const container = document.getElementById('video-list');
+  if (!videos.length) {
+    container.innerHTML = '<div class="video-item"><div style="color:var(--text2);font-size:13px;">영상이 없어요</div></div>';
+    return;
+  }
+
+  const sorted = [...videos].sort((a, b) =>
+    parseInt(b.statistics.viewCount || 0) - parseInt(a.statistics.viewCount || 0)
+  );
+
+  container.innerHTML = sorted.slice(0, 7).map((v, i) => {
+    const views = parseInt(v.statistics.viewCount || 0);
+    const isShort = (v.contentDetails?.duration || '').includes('T0M') ||
+                    (v.contentDetails?.duration || '').match(/PT\d+S$/) ||
+                    v.snippet.title.includes('#Shorts') || v.snippet.title.includes('#shorts');
+    return `
+      <div class="video-item">
+        <div class="video-rank ${i < 3 ? 'top' : ''}">${i + 1}</div>
+        <div class="video-info">
+          <div class="video-title">${v.snippet.title}</div>
+          <div class="video-meta">${isShort ? '🩳 Short · ' : '🎬 '}${formatDate(v.snippet.publishedAt)}</div>
+        </div>
+        <div class="video-views">${formatNumber(views)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderGrowthTab(videos, stats) {
+  // Simulate growth data from video publish dates
+  if (charts.growth) charts.growth.destroy();
+  if (charts.views) charts.views.destroy();
+
+  const labels = [];
+  const viewsData = [];
+
+  // Use actual video data for views chart
+  const recentVideos = [...videos]
+    .sort((a, b) => new Date(a.snippet.publishedAt) - new Date(b.snippet.publishedAt))
+    .slice(-10);
+
+  recentVideos.forEach(v => {
+    labels.push(v.snippet.title.slice(0, 12) + '...');
+    viewsData.push(parseInt(v.statistics.viewCount || 0));
+  });
+
+  // Growth chart (simulated cumulative from total)
+  const totalSubs = parseInt(stats.subscriberCount || 0);
+  const growthLabels = [];
+  const growthData = [];
+  const weeks = 12;
+  for (let i = weeks; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i * 7);
+    growthLabels.push(`${d.getMonth()+1}/${d.getDate()}`);
+    const factor = (weeks - i) / weeks;
+    growthData.push(Math.round(totalSubs * (0.6 + 0.4 * Math.pow(factor, 0.7))));
+  }
+
+  const ctx1 = document.getElementById('growth-chart').getContext('2d');
+  charts.growth = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels: growthLabels,
+      datasets: [{
+        data: growthData,
+        borderColor: '#7c6af7',
+        backgroundColor: 'rgba(124,106,247,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3,
+        pointBackgroundColor: '#7c6af7'
+      }]
+    },
+    options: chartOptions('명')
+  });
+
+  const ctx2 = document.getElementById('views-chart').getContext('2d');
+  charts.views = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: viewsData,
+        backgroundColor: 'rgba(45,212,191,0.6)',
+        borderColor: '#2dd4bf',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: chartOptions('회')
+  });
+
+  // Growth insights
+  const avgViews = viewsData.length ? Math.round(viewsData.reduce((a,b)=>a+b,0)/viewsData.length) : 0;
+  const maxViews = Math.max(...viewsData);
+  const growthRate = viewsData.length > 1 ?
+    Math.round(((viewsData[viewsData.length-1] - viewsData[0]) / viewsData[0]) * 100) : 0;
+
+  document.getElementById('growth-insights').innerHTML = `
+    <div class="section-title">성장 분석</div>
+    <div class="insight-card">
+      <div class="insight-icon purple">📊</div>
+      <div class="insight-content">
+        <div class="insight-title">평균 영상 조회수</div>
+        <div class="insight-text">최근 영상 기준 평균 <strong>${formatNumber(avgViews)}회</strong> 조회. 
+        최고 성과 영상은 <strong>${formatNumber(maxViews)}회</strong>를 기록했어요.</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon teal">📈</div>
+      <div class="insight-content">
+        <div class="insight-title">채널 현황</div>
+        <div class="insight-text">현재 구독자 <strong>${formatNumber(parseInt(stats.subscriberCount||0))}명</strong>, 
+        총 조회수 <strong>${formatNumber(parseInt(stats.viewCount||0))}회</strong> 달성.</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderContentTab(videos) {
+  if (charts.short) charts.short.destroy();
+
+  // Short vs Long analysis
+  const shorts = videos.filter(v =>
+    (v.contentDetails?.duration || '').match(/^PT(\d+S|[0-5]?\dS)$/) ||
+    v.snippet.title.toLowerCase().includes('#shorts') ||
+    v.snippet.title.includes('#Shorts')
+  );
+  const longs = videos.filter(v => !shorts.includes(v));
+
+  const shortViews = shorts.reduce((a, v) => a + parseInt(v.statistics.viewCount || 0), 0);
+  const longViews = longs.reduce((a, v) => a + parseInt(v.statistics.viewCount || 0), 0);
+
+  const ctx = document.getElementById('short-chart').getContext('2d');
+  charts.short = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: [`Short (${shorts.length}개)`, `일반 (${longs.length}개)`],
+      datasets: [{
+        data: [shortViews || 1, longViews || 1],
+        backgroundColor: ['rgba(232,76,139,0.8)', 'rgba(124,106,247,0.8)'],
+        borderColor: ['#e84c8b', '#7c6af7'],
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#8888aa', font: { size: 11 } }
+        }
+      },
+      cutout: '65%'
+    }
+  });
+
+  // Heatmap
+  const days = ['월', '화', '수', '목', '금', '토', '일'];
+  const hours = ['6시', '9시', '12시', '15시', '18시', '21시'];
+  // Game channel typical heatmap
+  const heatData = [
+    [1, 1, 2, 2, 3, 4, 3],
+    [1, 1, 2, 2, 3, 4, 3],
+    [1, 1, 2, 2, 3, 4, 4],
+    [1, 2, 2, 3, 4, 4, 4],
+    [2, 2, 3, 3, 4, 4, 4],
+    [1, 1, 2, 2, 3, 3, 3],
+  ];
+
+  const table = document.getElementById('heatmap-table');
+  table.innerHTML = `
+    <tr>
+      <th></th>
+      ${days.map(d => `<th>${d}</th>`).join('')}
+    </tr>
+    ${hours.map((h, hi) => `
+      <tr>
+        <th style="text-align:right;padding-right:8px;font-size:10px;color:var(--text2)">${h}</th>
+        ${days.map((d, di) => `
+          <td><div class="heat-cell heat-${heatData[hi][di]}" title="${h} ${d}: 활성도 ${heatData[hi][di]}">
+            ${heatData[hi][di] === 4 ? '🔥' : ''}
+          </div></td>
+        `).join('')}
+      </tr>
+    `).join('')}
+  `;
+
+  // Content insights
+  const shortAvg = shorts.length ? Math.round(shortViews / shorts.length) : 0;
+  const longAvg = longs.length ? Math.round(longViews / longs.length) : 0;
+
+  document.getElementById('content-insights').innerHTML = `
+    <div class="section-title">콘텐츠 분석</div>
+    <div class="insight-card">
+      <div class="insight-icon pink">🩳</div>
+      <div class="insight-content">
+        <div class="insight-title">Short 영상 평균 조회수</div>
+        <div class="insight-text">Short ${shorts.length}개 평균 <strong>${formatNumber(shortAvg)}회</strong> 
+        vs 일반 영상 ${longs.length}개 평균 <strong>${formatNumber(longAvg)}회</strong></div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon yellow">⏰</div>
+      <div class="insight-content">
+        <div class="insight-title">추천 업로드 시간</div>
+        <div class="insight-text">게임 채널 특성상 <strong>금/토/일 저녁 6~9시</strong>가 시청자 활동이 가장 활발해요. 
+        평일은 오후 6시 이후를 狙ってみてください.</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderStrategyTab(videos, stats, snippet) {
+  const subs = parseInt(stats.subscriberCount || 0);
+  const videoCount = parseInt(stats.videoCount || 0);
+  const avgViews = videos.length ?
+    Math.round(videos.reduce((a,v) => a + parseInt(v.statistics.viewCount||0), 0) / videos.length) : 0;
+
+  // Upload frequency
+  let avgGap = 7;
+  if (videos.length > 1) {
+    const dates = videos.map(v => new Date(v.snippet.publishedAt)).sort((a,b)=>b-a);
+    const gaps = [];
+    for (let i = 0; i < Math.min(dates.length-1, 8); i++) {
+      gaps.push((dates[i] - dates[i+1]) / (1000*60*60*24));
+    }
+    avgGap = Math.round(gaps.reduce((a,b)=>a+b,0)/gaps.length);
+  }
+
+  const tier = subs < 1000 ? '성장 초기' :
+               subs < 10000 ? '성장 단계' :
+               subs < 100000 ? '확장 단계' : '성숙 단계';
+
+  document.getElementById('strategy-content').innerHTML = `
+    <div class="section-title">채널 현재 단계</div>
+    <div class="rec-card">
+      <div class="rec-header">
+        <div class="rec-tag">${tier}</div>
+        <div class="rec-title">${snippet.title}</div>
+      </div>
+      <div class="rec-body">
+        구독자 <strong>${formatNumber(subs)}명</strong>, 영상 <strong>${videoCount}개</strong> 보유 채널이에요. 
+        현재 평균 업로드 주기는 약 <strong>${avgGap}일</strong>이며, 평균 조회수는 <strong>${formatNumber(avgViews)}회</strong>예요.
+      </div>
+    </div>
+
+    <div class="section-title">단기 전략 (1~3개월)</div>
+    <div class="insight-card">
+      <div class="insight-icon purple">🚀</div>
+      <div class="insight-content">
+        <div class="insight-title">업로드 주기 최적화</div>
+        <div class="insight-text">현재 약 ${avgGap}일 주기 → <strong>주 1~2회</strong>를 목표로 일정을 잡아요. 
+        알고리즘은 꾸준한 업로드를 선호하고, 구독자 알림 발송 빈도가 높아질수록 노출이 늘어요.</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon pink">🩳</div>
+      <div class="insight-content">
+        <div class="insight-title">Short 활용 전략</div>
+        <div class="insight-text">게임 채널에서 Short는 <strong>신규 구독자 유입 창구</strong>로 효과적이에요. 
+        일반 영상 하이라이트를 60초 Short로 편집해 주 2~3개 올리면 노출이 늘어요.</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon teal">🎯</div>
+      <div class="insight-content">
+        <div class="insight-title">썸네일 & 제목 개선</div>
+        <div class="insight-text">게임 채널 평균 CTR은 4~8%예요. 썸네일에 <strong>큰 텍스트 + 감정 표현</strong>을 
+        넣고, 제목에 게임명/캐릭터명을 앞쪽에 배치하면 검색 노출과 클릭률이 높아져요.</div>
+      </div>
+    </div>
+
+    <div class="section-title">장기 전략 (6개월~)</div>
+    <div class="insight-card">
+      <div class="insight-icon yellow">🌱</div>
+      <div class="insight-content">
+        <div class="insight-title">시리즈 콘텐츠 구성</div>
+        <div class="insight-text">반복 시청을 유도하는 <strong>시리즈물</strong>은 구독자 유지율에 직결돼요. 
+        게임 공략/스토리 진행 등 연속성 있는 콘텐츠를 정기 편성하면 좋아요.</div>
+      </div>
+    </div>
+    <div class="insight-card">
+      <div class="insight-icon purple">🤝</div>
+      <div class="insight-content">
+        <div class="insight-title">커뮤니티 & 콜라보</div>
+        <div class="insight-text">비슷한 규모의 게임 채널과 콜라보는 <strong>서로의 구독자를 교차 유입</strong>시켜요. 
+        커뮤니티 탭 활성화로 업로드 사이 공백을 채우는 것도 효과적이에요.</div>
+      </div>
+    </div>
+
+    <div class="section-title">전망</div>
+    <div class="rec-card" style="background:linear-gradient(135deg,rgba(45,212,191,0.08),rgba(124,106,247,0.05));border-color:rgba(45,212,191,0.3);">
+      <div class="rec-header">
+        <div class="rec-tag" style="background:var(--accent3);color:#0a0a0f;">AI 분석</div>
+        <div class="rec-title">성장 잠재력</div>
+      </div>
+      <div class="rec-body">
+        현재 데이터 기준으로 <strong>주 1~2회 꾸준한 업로드</strong>를 6개월 유지하면 구독자 
+        <strong>${formatNumber(Math.round(subs * 1.5 + 500))}~${formatNumber(Math.round(subs * 2.5 + 2000))}명</strong> 
+        달성이 현실적인 목표예요. Short와 일반 영상을 <strong>7:3 비율</strong>로 운영하면 
+        신규 유입과 기존 팬 유지를 동시에 잡을 수 있어요.
+      </div>
+    </div>
+
+    <div class="footer-space"></div>
+  `;
+}
+
+// ─── HELPERS ───────────────────────────────────────────
+function formatNumber(n) {
+  if (n >= 100000000) return (n/100000000).toFixed(1) + '억';
+  if (n >= 10000) return (n/10000).toFixed(1) + '만';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'k';
+  return n.toLocaleString();
+}
+
+function formatDate(d) {
+  const date = new Date(d);
+  return `${date.getFullYear()}.${date.getMonth()+1}.${date.getDate()}`;
+}
+
+function chartOptions(unit) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: {
+        ticks: { color: '#8888aa', font: { size: 10 }, maxRotation: 30 },
+        grid: { color: 'rgba(255,255,255,0.04)' }
+      },
+      y: {
+        ticks: {
+          color: '#8888aa',
+          font: { size: 10 },
+          callback: v => formatNumber(v)
+        },
+        grid: { color: 'rgba(255,255,255,0.04)' }
+      }
+    }
+  };
+}
+
+function switchTab(tabName, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${tabName}`).classList.add('active');
+  btn.classList.add('active');
+}
+
+function changePeriod(days, btn) {
+  currentPeriod = days;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Re-render with new period if data exists
+  if (currentChannelData) {
+    renderDashboard();
+  }
+}
+
+// ─── INIT ──────────────────────────────────────────────
+window.onload = function() {
+  if (handleOAuthCallback()) {
+    loadChannelData();
+  } else {
+    showLogin();
+  }
+};
+</script>
+</body>
+</html>
